@@ -22,12 +22,12 @@ class _MapPageState extends State<MapPage> {
 
   LatLng? currentL = null;
 
-  // @override
-  // void initState() {
-  //   super.initState();
+  @override
+  void initState() {
+    super.initState();
 
-  //   getLocationUpdates();
-  // }
+    getLocationUpdates();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,42 +56,38 @@ class _MapPageState extends State<MapPage> {
   }
   // Add a method to get the current location
   Future<void> getLocationUpdates() async {
-    // Cheek if user permission is granted
-    bool serviceEnabled;
-    PermissionStatus permissionGranted;
-
-    serviceEnabled = await locationController.serviceEnabled();
-    if(serviceEnabled)
-    {
-      serviceEnabled = await locationController.requestService();
-    }
-    else
-    {
-      return;
-    }
-
-    permissionGranted = await locationController.hasPermission();
-    if(permissionGranted == PermissionStatus.denied)
-    {
-      permissionGranted = await locationController.requestPermission();
-      if(permissionGranted != PermissionStatus.granted)
-      {
-        return;
+    try {
+      // Check if location services are enabled
+      bool serviceEnabled = await locationController.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await locationController.requestService();
+        if (!serviceEnabled) {
+          print("Location services are disabled.");
+          return; // Exit if the user denies enabling location services
+        }
       }
-    }
 
-    // Get the current location
-    locationController.onLocationChanged.listen((LocationData currentLocation) 
-    {
-      if(currentLocation.latitude != null && currentLocation.longitude != null)
-      {
-        setState(() 
-        {
-          currentL = LatLng(currentLocation.latitude!, currentLocation.longitude!);
-
-          print(currentL);
-        });
+      // Check for location permissions
+      PermissionStatus permissionGranted = await locationController.hasPermission();
+      if (permissionGranted == PermissionStatus.denied) {
+        permissionGranted = await locationController.requestPermission();
+        if (permissionGranted != PermissionStatus.granted) {
+          print("Location permissions are denied.");
+          return; // Exit if the user denies permissions
+        }
       }
-    });
+
+      // Listen for location updates
+      locationController.onLocationChanged.listen((LocationData currentLocation) {
+        if (currentLocation.latitude != null && currentLocation.longitude != null) {
+          setState(() {
+            currentL = LatLng(currentLocation.latitude!, currentLocation.longitude!);
+            print("Current location: $currentL");
+          });
+        }
+      });
+    } catch (e) {
+      print("Error in getLocationUpdates: $e");
+    }
   }
 }
