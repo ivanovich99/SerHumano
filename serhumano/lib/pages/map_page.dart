@@ -31,29 +31,34 @@ class _MapPageState extends State<MapPage> {
 
   @override
   Widget build(BuildContext context) {
-    // View of widget Google Maps API
     return Scaffold(
-      body: GoogleMap(
-        initialCameraPosition: CameraPosition(
-          target: initialLocation,
-          zoom: 13,
-        ),
-        zoomControlsEnabled: true, // Enable zoom in/out buttons
-        markers: {
-          Marker(
-            markerId: MarkerId("currentLocation"),
-            icon: BitmapDescriptor.defaultMarker,
-            position: initialLocation,
-          ),
-          Marker(
-            markerId: MarkerId("anotherLocation"),
-            icon: BitmapDescriptor.defaultMarker,
-            position: anotherLocation,
-          ),
-        },
-      ),
+      // If current position is null, show loading; otherwise, show the map
+      body: currentL == null
+          ? const Center(
+              child: Text("Loading..."),
+            )
+          : GoogleMap(
+              initialCameraPosition: CameraPosition(
+                target: currentL!, // Use the updated currentL value
+                zoom: 13,
+              ),
+              zoomControlsEnabled: true, // Enable zoom in/out buttons
+              markers: {
+                Marker(
+                  markerId: MarkerId("currentLocation"),
+                  icon: BitmapDescriptor.defaultMarker,
+                  position: currentL!, // Use the updated currentL value
+                ),
+                Marker(
+                  markerId: MarkerId("anotherLocation"),
+                  icon: BitmapDescriptor.defaultMarker,
+                  position: anotherLocation,
+                ),
+              },
+            ),
     );
   }
+
   // Add a method to get the current location
   Future<void> getLocationUpdates() async {
     try {
@@ -63,7 +68,10 @@ class _MapPageState extends State<MapPage> {
         serviceEnabled = await locationController.requestService();
         if (!serviceEnabled) {
           print("Location services are disabled.");
-          return; // Exit if the user denies enabling location services
+          setState(() {
+            currentL = initialLocation; // Fallback to initial location
+          });
+          return;
         }
       }
 
@@ -73,12 +81,16 @@ class _MapPageState extends State<MapPage> {
         permissionGranted = await locationController.requestPermission();
         if (permissionGranted != PermissionStatus.granted) {
           print("Location permissions are denied.");
-          return; // Exit if the user denies permissions
+          setState(() {
+            currentL = initialLocation; // Fallback to initial location
+          });
+          return;
         }
       }
 
       // Listen for location updates
       locationController.onLocationChanged.listen((LocationData currentLocation) {
+        print("Location update received: ${currentLocation.latitude}, ${currentLocation.longitude}");
         if (currentLocation.latitude != null && currentLocation.longitude != null) {
           setState(() {
             currentL = LatLng(currentLocation.latitude!, currentLocation.longitude!);
@@ -88,6 +100,9 @@ class _MapPageState extends State<MapPage> {
       });
     } catch (e) {
       print("Error in getLocationUpdates: $e");
+      setState(() {
+        currentL = initialLocation; // Fallback to initial location
+      });
     }
   }
 }
