@@ -3,6 +3,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:flutter_polyline_points/flutter_polyline_points.dart';
 import 'package:serhumano/consts.dart';
+import 'package:serhumano/hospitals_list.dart';
 
 class MapPage extends StatefulWidget {
   const MapPage({super.key});
@@ -16,10 +17,10 @@ class _MapPageState extends State<MapPage> {
   Location locationController = Location();
 
   // Set initial location to the center of the map
-  static const LatLng initialLocation = LatLng(37.7749, -122.4194);
+  static const LatLng initialLocation = LatLng(32.507443817279736, -116.92798845463564);
 
-  // Another location in map
-  static const LatLng anotherLocation = LatLng(37.7599, -122.4148);
+  // Destination location
+  LatLng destinationLocation = LatLng(32.50761951262851, -116.92793826234407);
 
   LatLng? currentL;
 
@@ -27,54 +28,82 @@ class _MapPageState extends State<MapPage> {
 
   Map<PolylineId, Polyline> polylines = {};
 
+  bool isCameraMoving = false;
+
+  String? selectedHospitalId;
+
   @override
   void initState() {
     super.initState();
-    currentL = initialLocation; // Set a default location
-    getLocationUpdates().then((_) => {
-      getPolyLinePoints().then((coordinates) => {
-        generatePolyLinesFromPoints(coordinates),
-      }),
-    });
+    getLocationUpdates();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: currentL == null
-          ? const Center(
-              child: Text("Loading..."),
-            )
-          : GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: currentL!, // Use the updated currentL value
-                zoom: 13,
-              ),
-              zoomControlsEnabled: true,
-              myLocationEnabled: true, // Enable the "My Location" layer
-              myLocationButtonEnabled: true, // Enable the "My Location" button
-              onMapCreated: (GoogleMapController controller) {
-                _mapController = controller; // Assign the controller
+      appBar: AppBar(
+        title: const Text("Select a Hospital"),
+      ),
+      body: Column(
+        children: [
+          // Dropdown for hospital selection
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DropdownButton<String>(
+              value: selectedHospitalId,
+              hint: const Text("Select a Hospital"),
+              items: hospitals.map((hospital) {
+                return DropdownMenuItem<String>(
+                  value: hospital.id,
+                  child: Text(hospital.name),
+                );
+              }).toList(),
+              onChanged: (String? newHospitalId) {
+                if (currentL == null) {
+    print("Ubicación actual aún no disponible.");
+    return;
+  }
+                setState(() {
+                  selectedHospitalId = newHospitalId;
+
+                  // Update destinationLocation based on the selected hospital
+                  Hospital selectedHospital = hospitals.firstWhere((hospital) => hospital.id == newHospitalId!);
+                  destinationLocation = LatLng(selectedHospital.latitude, selectedHospital.longitude);
+
+                  // Recalculate the route
+                  getPolyLinePoints();
+                });
               },
-              markers: {
-                Marker(
-                  markerId: MarkerId("currentLocation"),
-                  icon: BitmapDescriptor.defaultMarker,
-                  position: currentL!, // Use the updated currentL value
-                ),
-                Marker(
-                  markerId: MarkerId("sourceLocation"),
-                  icon: BitmapDescriptor.defaultMarker,
-                  position: initialLocation,
-                ),
-                Marker(
-                  markerId: MarkerId("destinationLocation"),
-                  icon: BitmapDescriptor.defaultMarker,
-                  position: anotherLocation,
-                ),
-              },
-              polylines: Set<Polyline>.of(polylines.values),
             ),
+          ),
+          Expanded(
+            child: currentL == null
+                ? const Center(
+                    child: Text("Loading..."),
+                  )
+                : GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: currentL!, // Use the updated currentL value
+                      zoom: 15,
+                    ),
+                    zoomControlsEnabled: true,
+                    myLocationEnabled: true, // Enable the "My Location" layer
+                    myLocationButtonEnabled: true, // Enable the "My Location" button
+                    onMapCreated: (GoogleMapController controller) {
+                      _mapController = controller; // Assign the controller
+                    },
+                    onCameraMove: (CameraPosition position) {
+                      isCameraMoving = true; // User is manually moving the camera
+                    },
+                    onCameraIdle: () {
+                      isCameraMoving = false; // User has stopped moving the camera
+                    },
+                    markers: hospitalMarkers, // List of all hospitals
+                    polylines: Set<Polyline>.of(polylines.values),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -114,10 +143,15 @@ class _MapPageState extends State<MapPage> {
             currentL = LatLng(currentLocation.latitude!, currentLocation.longitude!);
             print("Current location: $currentL");
 
-            // Move the camera to the new location
-            _mapController?.animateCamera(
-              CameraUpdate.newLatLng(currentL!),
-            );
+            // Only move the camera if the user is not manually moving it
+            if (!isCameraMoving) {
+              _mapController?.animateCamera(
+                CameraUpdate.newLatLng(currentL!),
+              );
+            }
+
+            // Update the route dynamically
+            getPolyLinePoints();
           });
         }
       });
@@ -129,43 +163,47 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  Future<List<LatLng>> getPolyLinePoints() async {
+  Future<void> getPolyLinePoints() async {
+    if (currentL == null) {
+      print("Current location is not available yet.");
+      return; // Exit if currentL is not ready
+    }
+
     List<LatLng> polylineCoordinates = [];
     PolylinePoints polylinePoints = PolylinePoints();
 
-    // Use the request object in the function call
+    // Use the current location as the origin
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
       googleApiKey: GOOGLE_MAPS_API_KEY,
       request: PolylineRequest(
-        origin: PointLatLng(initialLocation.latitude, initialLocation.longitude),
-        destination: PointLatLng(anotherLocation.latitude, anotherLocation.longitude),
-        mode: TravelMode.driving,
+        origin: PointLatLng(currentL!.latitude, currentL!.longitude), // Use real-time location
+        destination: PointLatLng(destinationLocation.latitude, destinationLocation.longitude),
+        mode: TravelMode.walking,
       ),
     );
+
     if (result.points.isNotEmpty) {
       for (var point in result.points) {
         polylineCoordinates.add(LatLng(point.latitude, point.longitude));
       }
-    }
-    else{
+    } else {
       print("Error in getPolyLinePoints: ${result.errorMessage}");
     }
 
-    return polylineCoordinates;
+    generatePolyLinesFromPoints(polylineCoordinates);
   }
 
-void generatePolyLinesFromPoints(List<LatLng> polylineCoordinates) async{
-  PolylineId id = PolylineId("poly");
-  Polyline polyline = Polyline(
-    polylineId: id, 
-    color: Colors.black,
-    points: polylineCoordinates,
-    width: 8
+  void generatePolyLinesFromPoints(List<LatLng> polylineCoordinates) {
+    PolylineId id = PolylineId("poly");
+    Polyline polyline = Polyline(
+      polylineId: id,
+      color: Colors.deepOrange,
+      points: polylineCoordinates,
+      width: 8,
     );
 
     setState(() {
       polylines[id] = polyline;
     });
-}
-
+  }
 }
