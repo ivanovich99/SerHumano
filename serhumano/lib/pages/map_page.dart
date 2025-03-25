@@ -20,7 +20,7 @@ class _MapPageState extends State<MapPage> {
   static const LatLng initialLocation = LatLng(32.507443817279736, -116.92798845463564);
 
   // Destination location
-  static const LatLng destinationLocation = LatLng(32.50761951262851, -116.92793826234407);
+  LatLng destinationLocation = LatLng(32.50761951262851, -116.92793826234407);
 
   LatLng? currentL;
 
@@ -30,40 +30,80 @@ class _MapPageState extends State<MapPage> {
 
   bool isCameraMoving = false;
 
+  String? selectedHospitalId;
+
   @override
   void initState() {
     super.initState();
-    currentL = initialLocation; // Set a default location
     getLocationUpdates();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: currentL == null
-          ? const Center(
-              child: Text("Loading..."),
-            )
-          : GoogleMap(
-              initialCameraPosition: CameraPosition(
-                target: currentL!, // Use the updated currentL value
-                zoom: 15,
-              ),
-              zoomControlsEnabled: true,
-              myLocationEnabled: true, // Enable the "My Location" layer
-              myLocationButtonEnabled: true, // Enable the "My Location" button
-              onMapCreated: (GoogleMapController controller) {
-                _mapController = controller; // Assign the controller
+      appBar: AppBar(
+        title: const Text("Select a Hospital"),
+      ),
+      body: Column(
+        children: [
+          // Dropdown for hospital selection
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: DropdownButton<String>(
+              value: selectedHospitalId,
+              hint: const Text("Select a Hospital"),
+              items: hospitals.map((hospital) {
+                return DropdownMenuItem<String>(
+                  value: hospital.id,
+                  child: Text(hospital.name),
+                );
+              }).toList(),
+              onChanged: (String? newHospitalId) {
+                if (currentL == null) {
+    print("Ubicación actual aún no disponible.");
+    return;
+  }
+                setState(() {
+                  selectedHospitalId = newHospitalId;
+
+                  // Update destinationLocation based on the selected hospital
+                  Hospital selectedHospital = hospitals.firstWhere((hospital) => hospital.id == newHospitalId!);
+                  destinationLocation = LatLng(selectedHospital.latitude, selectedHospital.longitude);
+
+                  // Recalculate the route
+                  getPolyLinePoints();
+                });
               },
-              onCameraMove: (CameraPosition position) {
-                isCameraMoving = true; // User is manually moving the camera
-              },
-              onCameraIdle: () {
-                isCameraMoving = false; // User has stopped moving the camera
-              },
-              markers: hospitalMarkers, // List of all hospitals>
-              polylines: Set<Polyline>.of(polylines.values),
             ),
+          ),
+          Expanded(
+            child: currentL == null
+                ? const Center(
+                    child: Text("Loading..."),
+                  )
+                : GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                      target: currentL!, // Use the updated currentL value
+                      zoom: 15,
+                    ),
+                    zoomControlsEnabled: true,
+                    myLocationEnabled: true, // Enable the "My Location" layer
+                    myLocationButtonEnabled: true, // Enable the "My Location" button
+                    onMapCreated: (GoogleMapController controller) {
+                      _mapController = controller; // Assign the controller
+                    },
+                    onCameraMove: (CameraPosition position) {
+                      isCameraMoving = true; // User is manually moving the camera
+                    },
+                    onCameraIdle: () {
+                      isCameraMoving = false; // User has stopped moving the camera
+                    },
+                    markers: hospitalMarkers, // List of all hospitals
+                    polylines: Set<Polyline>.of(polylines.values),
+                  ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -124,6 +164,11 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> getPolyLinePoints() async {
+    if (currentL == null) {
+      print("Current location is not available yet.");
+      return; // Exit if currentL is not ready
+    }
+
     List<LatLng> polylineCoordinates = [];
     PolylinePoints polylinePoints = PolylinePoints();
 
