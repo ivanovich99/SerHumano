@@ -6,7 +6,8 @@ class Hospital {
   final String id;
   final String name;
   final String address;
-  final String phone;
+  final String phone; // Privado o Publico
+  final String sector; // Privado o Publico
   final double latitude;
   final double longitude;
 
@@ -15,6 +16,7 @@ class Hospital {
     required this.name,
     required this.address,
     required this.phone,
+    required this.sector,
     required this.latitude,
     required this.longitude,
   }) : id = Uuid().v4(); // Generar ID único al crear el hospital
@@ -37,14 +39,16 @@ List<Hospital> hospitals = [
   Hospital(
     name: 'Hospital General',
     address: 'Calle 123, Ciudad, País',
-    phone: '123-456-7890',
+    phone: '123 456 7890',
+    sector: 'Público',
     latitude: 32.50761951262851, 
     longitude: -116.92793826234407,
   ),
   Hospital(
     name: 'Clínica ABC',
     address: 'Avenida 456, Ciudad, País',
-    phone: '987-654-3210',
+    phone: '987 654 3210',
+    sector: 'Privado',
     latitude: 32.507976159722595,
     longitude: -116.92857868256071
   ),
