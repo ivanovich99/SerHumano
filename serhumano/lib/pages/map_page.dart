@@ -35,6 +35,9 @@ class _MapPageState extends State<MapPage> {
 
   String? selectedHospitalId;
 
+  // Add a variable to track the selected sector filter
+  String? selectedSectorFilter; // "Public" or "Private" or null (no filter)
+
   @override
   void initState() {
     super.initState();
@@ -56,22 +59,22 @@ class _MapPageState extends State<MapPage> {
                       )
                     : GoogleMap(
                         initialCameraPosition: CameraPosition(
-                          target: currentL!, // Use the updated currentL value
+                          target: currentL!,
                           zoom: 15,
                         ),
                         zoomControlsEnabled: true,
-                        myLocationEnabled: true, // Enable the "My Location" layer
-                        myLocationButtonEnabled: true, // Enable the "My Location" button
+                        myLocationEnabled: true,
+                        myLocationButtonEnabled: true,
                         onMapCreated: (GoogleMapController controller) {
-                          _mapController = controller; // Assign the controller
+                          _mapController = controller;
                         },
                         onCameraMove: (CameraPosition position) {
-                          isCameraMoving = true; // User is manually moving the camera
+                          isCameraMoving = true;
                         },
                         onCameraIdle: () {
-                          isCameraMoving = false; // User has stopped moving the camera
+                          isCameraMoving = false;
                         },
-                        markers: hospitalMarkers, // List of all hospitals
+                        markers: getFilteredMarkers(), // Use filtered markers
                         polylines: Set<Polyline>.of(polylines.values),
                       ),
               ),
@@ -92,8 +95,8 @@ class _MapPageState extends State<MapPage> {
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withAlpha(50), // Slight shadow
-                        blurRadius: 4,
                         offset: const Offset(0, 2),
+                        blurRadius: 4,
                       ),
                     ],
                   ),
@@ -120,8 +123,8 @@ class _MapPageState extends State<MapPage> {
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withAlpha(50), // Slight shadow
-                        blurRadius: 4,
                         offset: const Offset(0, 2),
+                        blurRadius: 4,
                       ),
                     ],
                   ),
@@ -131,7 +134,6 @@ class _MapPageState extends State<MapPage> {
                         child: TextField(
                           readOnly: true,
                           onTap: () async {
-                            // Show the hospital list as a modal bottom sheet
                             final selectedHospital = await showModalBottomSheet(
                               context: context,
                               isScrollControlled: true,
@@ -152,8 +154,8 @@ class _MapPageState extends State<MapPage> {
                                   selectedHospital.latitude,
                                   selectedHospital.longitude,
                                 );
-                                selectedHospitalId = selectedHospital.name; // Update the destination label
                                 getPolyLinePoints(); // Generate the polyline only after a hospital is selected
+                                selectedHospitalId = selectedHospital.name; // Update the destination label
                               });
                             }
                           },
@@ -173,8 +175,8 @@ class _MapPageState extends State<MapPage> {
                                     onPressed: () {
                                       setState(() {
                                         destinationLocation = initialLocation; // Reset destination
-                                        selectedHospitalId = null; // Clear the selected hospital
                                         polylines.clear(); // Remove the polyline
+                                        selectedHospitalId = null; // Clear the selected hospital
                                       });
                                     },
                                   )
@@ -184,6 +186,53 @@ class _MapPageState extends State<MapPage> {
                       ),
                     ],
                   ),
+                ),
+              ],
+            ),
+          ),
+          // Filter buttons
+          Positioned(
+            bottom: 80,
+            right: 16,
+            child: Column(
+              children: [
+                FloatingActionButton(
+                  heroTag: "public",
+                  onPressed: () {
+                    setState(() {
+                      selectedSectorFilter = "Public";
+                    });
+                  },
+                  backgroundColor: selectedSectorFilter == "Public"
+                      ? Colors.green
+                      : Colors.grey,
+                  child: const Icon(Icons.public),
+                ),
+                const SizedBox(height: 8),
+                FloatingActionButton(
+                  heroTag: "private",
+                  onPressed: () {
+                    setState(() {
+                      selectedSectorFilter = "Private";
+                    });
+                  },
+                  backgroundColor: selectedSectorFilter == "Private"
+                      ? Colors.blue
+                      : Colors.grey,
+                  child: const Icon(Icons.lock),
+                ),
+                const SizedBox(height: 8),
+                FloatingActionButton(
+                  heroTag: "clear",
+                  onPressed: () {
+                    setState(() {
+                      selectedSectorFilter = null; // Clear the filter
+                    });
+                  },
+                  backgroundColor: selectedSectorFilter == null
+                      ? Colors.red
+                      : Colors.grey,
+                  child: const Icon(Icons.clear),
                 ),
               ],
             ),
@@ -202,7 +251,7 @@ class _MapPageState extends State<MapPage> {
                   ),
                   builder: (context) {
                     return SizedBox(
-                      height: MediaQuery.of(context).size.height * 0.8,
+                      height: MediaQuery.of(context).size.height * 0.78,
                       child: const HospitalListScreen(),
                     );
                   },
@@ -220,7 +269,7 @@ class _MapPageState extends State<MapPage> {
                 }
               },
               backgroundColor: Colors.deepOrange,
-              child: const Icon(Icons.local_hospital, color: Colors.white),
+              child: const Icon(Icons.assistant_navigation, color: Colors.white),
             ),
           ),
         ],
@@ -246,7 +295,6 @@ class _MapPageState extends State<MapPage> {
           setState(() {
             currentL = LatLng(currentLocation.latitude!, currentLocation.longitude!);
             print("Current location: $currentL");
-
             // Only move the camera if the user is not manually moving it
             if (!isCameraMoving) {
               _mapController?.animateCamera(
@@ -258,9 +306,6 @@ class _MapPageState extends State<MapPage> {
       });
     } catch (e) {
       print("Error in getLocationUpdates: $e");
-      setState(() {
-        currentL = initialLocation; // Fallback to initial location
-      });
     }
   }
 
@@ -270,9 +315,10 @@ class _MapPageState extends State<MapPage> {
       return; // Exit if currentL is not ready
     }
 
-    List<LatLng> polylineCoordinates = [];
     PolylinePoints polylinePoints = PolylinePoints();
+    List<LatLng> polylineCoordinates = [];
 
+    // Use the current location as the origin
     // Use the current location as the origin
     PolylineResult result = await polylinePoints.getRouteBetweenCoordinates(
       googleApiKey: GOOGLE_MAPS_API_KEY,
@@ -287,11 +333,10 @@ class _MapPageState extends State<MapPage> {
       for (var point in result.points) {
         polylineCoordinates.add(LatLng(point.latitude, point.longitude));
       }
+      generatePolyLinesFromPoints(polylineCoordinates);
     } else {
       print("Error in getPolyLinePoints: ${result.errorMessage}");
     }
-
-    generatePolyLinesFromPoints(polylineCoordinates);
   }
 
   void generatePolyLinesFromPoints(List<LatLng> polylineCoordinates) {
@@ -299,12 +344,22 @@ class _MapPageState extends State<MapPage> {
     Polyline polyline = Polyline(
       polylineId: id,
       color: Colors.deepOrange,
-      points: polylineCoordinates,
       width: 8,
+      points: polylineCoordinates,
     );
-
     setState(() {
       polylines[id] = polyline;
     });
+  }
+
+  // Filter markers based on the selected sector
+  Set<Marker> getFilteredMarkers() {
+    if (selectedSectorFilter == null) {
+      return hospitalMarkers; // Show all markers if no filter is selected
+    }
+    return hospitals
+        .where((hospital) => hospital.sector == selectedSectorFilter)
+        .map((hospital) => hospital.createMarker())
+        .toSet();
   }
 }

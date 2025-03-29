@@ -9,8 +9,9 @@ class HospitalListScreen extends StatefulWidget {
 }
 
 class _HospitalListScreenState extends State<HospitalListScreen> {
-  String searchQuery = ""; // Track the search query
-  List<Hospital> filteredHospitals = hospitals; // Filtered list of hospitals
+  String searchQuery = "";
+  String? selectedSectorFilter; // Track the selected sector filter
+  List<Hospital> filteredHospitals = hospitals;
 
   @override
   Widget build(BuildContext context) {
@@ -29,20 +30,18 @@ class _HospitalListScreenState extends State<HospitalListScreen> {
             ),
           ),
           const SizedBox(height: 16),
+          // Filter buttons for sector
           // Search bar
           TextField(
             decoration: const InputDecoration(
-              labelText: "Write a hospital...",
+              labelText: "Search hospitals...",
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.search),
             ),
             onChanged: (value) {
               setState(() {
                 searchQuery = value.toLowerCase();
-                filteredHospitals = hospitals
-                    .where((hospital) =>
-                        hospital.name.toLowerCase().contains(searchQuery))
-                    .toList();
+                applyFilters();
               });
             },
           ),
@@ -54,13 +53,13 @@ class _HospitalListScreenState extends State<HospitalListScreen> {
               itemBuilder: (context, index) {
                 final hospital = filteredHospitals[index];
                 return ListTile(
-                    title: Text(
+                  title: Text(
                     hospital.name,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
-                    ),
+                  ),
                   subtitle: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -70,7 +69,6 @@ class _HospitalListScreenState extends State<HospitalListScreen> {
                   ),
                   trailing: const Icon(Icons.arrow_forward),
                   onTap: () {
-                    // Pass the selected hospital back to the map screen
                     Navigator.pop(context, hospital);
                   },
                 );
@@ -78,16 +76,68 @@ class _HospitalListScreenState extends State<HospitalListScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          // Display the number of hospitals found
-          Text(
-            "${filteredHospitals.length} hospital(s) found",
-            style: TextStyle(
-              color: Colors.grey.withAlpha((0.8 * 255).toInt()), // Use withAlpha instead of withOpacity
-              fontSize: 14,
-            ),
+          // Replace the number of hospitals found with filter buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    selectedSectorFilter = "Public";
+                    applyFilters();
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: selectedSectorFilter == "Public"
+                      ? Colors.green
+                      : Colors.grey,
+                ),
+                child: const Icon(Icons.public),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    selectedSectorFilter = "Private";
+                    applyFilters();
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: selectedSectorFilter == "Private"
+                      ? Colors.blue
+                      : Colors.grey,
+                ),
+                child: const Icon(Icons.lock),
+              ),
+              ElevatedButton(
+                onPressed: () {
+                  setState(() {
+                    selectedSectorFilter = null; // Clear the filter
+                    applyFilters();
+                  });
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: selectedSectorFilter == null
+                      ? Colors.red
+                      : Colors.grey,
+                ),
+                child: const Icon(Icons.cancel),
+              ),
+            ],
           ),
         ],
       ),
     );
+  }
+
+  // Apply filters to the hospital list
+  void applyFilters() {
+    setState(() {
+      filteredHospitals = hospitals
+          .where((hospital) =>
+              (selectedSectorFilter == null ||
+                  hospital.sector == selectedSectorFilter) &&
+              hospital.name.toLowerCase().contains(searchQuery))
+          .toList();
+    });
   }
 }

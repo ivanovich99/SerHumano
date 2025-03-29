@@ -40,7 +40,7 @@ List<Hospital> hospitals = [
     name: 'Hospital General',
     address: 'Calle 123, Ciudad, País',
     phone: '123 456 7890',
-    sector: 'Público',
+    sector: 'Public',
     latitude: 32.50761951262851, 
     longitude: -116.92793826234407,
   ),
@@ -48,7 +48,7 @@ List<Hospital> hospitals = [
     name: 'Clínica ABC',
     address: 'Avenida 456, Ciudad, País',
     phone: '987 654 3210',
-    sector: 'Privado',
+    sector: 'Private',
     latitude: 32.507976159722595,
     longitude: -116.92857868256071
   ),
