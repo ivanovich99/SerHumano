@@ -193,7 +193,7 @@ class _MapPageState extends State<MapPage> {
           // Filter buttons
           Positioned(
             bottom: 80,
-            right: 16,
+            right: 8, // Adjusted to align with the default Google Maps location button
             child: Column(
               children: [
                 FloatingActionButton(
@@ -295,12 +295,6 @@ class _MapPageState extends State<MapPage> {
           setState(() {
             currentL = LatLng(currentLocation.latitude!, currentLocation.longitude!);
             print("Current location: $currentL");
-            // Only move the camera if the user is not manually moving it
-            if (!isCameraMoving) {
-              _mapController?.animateCamera(
-                CameraUpdate.newLatLng(currentL!),
-              );
-            }
           });
         }
       });
