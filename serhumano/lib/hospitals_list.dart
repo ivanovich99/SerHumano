@@ -6,7 +6,8 @@ class Hospital {
   final String id;
   final String name;
   final String address;
-  final String phone; // Privado o Publico
+  final String phone; 
+  final String website; // URL del sitio web
   final String sector; // Privado o Publico
   final double latitude;
   final double longitude;
@@ -16,6 +17,7 @@ class Hospital {
     required this.name,
     required this.address,
     required this.phone,
+    this.website = "", // URL del sitio web opcional
     required this.sector,
     required this.latitude,
     required this.longitude,
@@ -40,6 +42,7 @@ List<Hospital> hospitals = [
     name: 'Hospital General',
     address: 'Calle 123, Ciudad, País',
     phone: '123 456 7890',
+    website: 'https://www.google.com', // URL del sitio web
     sector: 'Public',
     latitude: 32.50761951262851, 
     longitude: -116.92793826234407,
@@ -48,6 +51,7 @@ List<Hospital> hospitals = [
     name: 'Clínica ABC',
     address: 'Avenida 456, Ciudad, País',
     phone: '987 654 3210',
+    website: 'https://www.youtube.com', // URL del sitio web
     sector: 'Private',
     latitude: 32.507976159722595,
     longitude: -116.92857868256071
