@@ -35,7 +35,7 @@ class _HospitalListScreenState extends State<HospitalListScreen> {
           // Search bar
           TextField(
             decoration: const InputDecoration(
-              labelText: "Search hospitals...",
+              labelText: "Búsqueda de hospitales...",
               border: OutlineInputBorder(),
               prefixIcon: Icon(Icons.search),
             ),

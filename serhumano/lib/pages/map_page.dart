@@ -63,7 +63,7 @@ class _MapPageState extends State<MapPage> {
               Expanded(
                 child: currentL == null
                     ? const Center(
-                        child: Text("Loading..."),
+                        child: Text("Cargando..."),
                       )
                     : GoogleMap(
                         initialCameraPosition: CameraPosition(
@@ -114,7 +114,7 @@ class _MapPageState extends State<MapPage> {
                       fontWeight: FontWeight.bold, // Bold text
                     ),
                     decoration: InputDecoration(
-                      hintText: "Current Location",
+                      hintText: "Ubicación actual",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -172,7 +172,7 @@ class _MapPageState extends State<MapPage> {
                           ),
                           decoration: InputDecoration(
                             labelText: "Destination",
-                            hintText: selectedHospitalId ?? "Choose a hospital...", // Dynamically update the hint
+                            hintText: selectedHospitalId ?? "Selecciona un hospital...", // Dynamically update the hint
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
@@ -302,7 +302,7 @@ class _MapPageState extends State<MapPage> {
         if (currentLocation.latitude != null && currentLocation.longitude != null) {
           setState(() {
             currentL = LatLng(currentLocation.latitude!, currentLocation.longitude!);
-            print("Current location: $currentL");
+            print("Ubicación actual: $currentL");
           });
         }
       });
