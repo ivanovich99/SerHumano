@@ -41,6 +41,14 @@ class _MapPageState extends State<MapPage> {
   @override
   void initState() {
     super.initState();
+
+    // Load hospitals from CSV
+    loadHospitalsFromCsv().then((_) {
+      setState(() {
+        // Trigger a rebuild after hospitals are loaded
+      });
+    });
+
     permissionsHelper = PermissionsHelper(locationController);
     getLocationUpdates();
   }
@@ -193,7 +201,7 @@ class _MapPageState extends State<MapPage> {
           // Filter buttons
           Positioned(
             bottom: 80,
-            right: 8, // Adjusted to align with the default Google Maps location button
+            right: 9, // Adjusted to align with the default Google Maps location button
             child: Column(
               children: [
                 FloatingActionButton(
