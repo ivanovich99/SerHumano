@@ -73,23 +73,38 @@ class _HospitalListScreenState extends State<HospitalListScreen> {
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  hospital.name,
-                                  style: const TextStyle(
-                                    fontSize: 20,
-                                    fontWeight: FontWeight.bold,
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    hospital.name,
+                                    style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(hospital.address),
-                                Text(hospital.phone),
-                              ],
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    hospital.address,
+                                    style: const TextStyle(
+                                      fontSize: 10,
+                                    ),
+                                  ),
+                                  if (hospital.email.isNotEmpty)
+                                    Text(
+                                      hospital.email,
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                      ),
+                                    ),
+                                ],
+                              ),
                             ),
                             Icon(
-                              Icons.info, // Replace the arrow with an info icon
+                              Icons.info,
                               color: isSelected ? Colors.blue : Colors.grey,
                             ),
                           ],
@@ -103,37 +118,56 @@ class _HospitalListScreenState extends State<HospitalListScreen> {
                               key: ValueKey(hospital.id),
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
-                                ElevatedButton.icon(
-                                  onPressed: () {
-                                    // Open the hospital's webpage
-                                    if (hospital.website.isNotEmpty) {
+                                if (hospital.website.isNotEmpty)
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      // Open the hospital's webpage
                                       launchUrl(Uri.parse(hospital.website));
-                                    }
-                                  },
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color.fromARGB(255, 240, 137, 105),
-                                  ),
-                                  icon: const Icon(Icons.find_in_page),
-                                  label: const Text(
-                                    "Página web",
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold, // Make the text bold
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.deepOrange,
+                                    ),
+                                    icon: const Icon(Icons.find_in_page,color: Colors.white),
+                                    label: const Text(
+                                      "Página",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,// Make the text bold
+                                      ),
                                     ),
                                   ),
-                                ),
+                                if (hospital.phone.isNotEmpty)
+                                  ElevatedButton.icon(
+                                    onPressed: () {
+                                      // Call the hospital
+                                      launchUrl(Uri.parse('tel:${hospital.phone}'));
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.deepOrange,
+                                    ),
+                                    icon: const Icon(Icons.phone,color: Colors.white),
+                                    label: const Text(
+                                      "Llamar",
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white, // Make the text bold
+                                      ),
+                                    ),
+                                  ),
                                 ElevatedButton.icon(
                                   onPressed: () {
                                     // Start trip to the hospital
                                     Navigator.pop(context, hospital);
                                   },
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color.fromARGB(255, 240, 137, 105),
+                                    backgroundColor: Colors.deepOrange,
                                   ),
-                                  icon: const Icon(Icons.directions),
+                                  icon: const Icon(Icons.directions, color: Colors.white),
                                   label: const Text(
-                                    "Iniciar viaje",
+                                    "Viajar",
                                     style: TextStyle(
-                                      fontWeight: FontWeight.bold, // Make the text bold
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white, // Make the text bold
                                     ),
                                   ),
                                 ),
@@ -148,7 +182,7 @@ class _HospitalListScreenState extends State<HospitalListScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          // Replace the number of hospitals found with filter buttons
+          // Filter buttons
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
