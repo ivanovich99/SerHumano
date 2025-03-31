@@ -38,6 +38,8 @@ class _MapPageState extends State<MapPage> {
   // Add a variable to track the selected sector filter
   String? selectedSectorFilter; // "Public" or "Private" or null (no filter)
 
+  Hospital? selectedHospital; // Track the selected hospital
+
   @override
   void initState() {
     super.initState();
@@ -158,12 +160,13 @@ class _MapPageState extends State<MapPage> {
 
                             if (selectedHospital != null) {
                               setState(() {
+                                this.selectedHospital = selectedHospital; // Update the selected hospital
+                                selectedHospitalId = selectedHospital.name; // Update the destination label
                                 destinationLocation = LatLng(
                                   selectedHospital.latitude,
                                   selectedHospital.longitude,
                                 );
-                                getPolyLinePoints(); // Generate the polyline only after a hospital is selected
-                                selectedHospitalId = selectedHospital.name; // Update the destination label
+                                getPolyLinePoints(); // Generate the polyline
                               });
                             }
                           },
@@ -171,7 +174,7 @@ class _MapPageState extends State<MapPage> {
                             fontWeight: FontWeight.bold, // Bold text
                           ),
                           decoration: InputDecoration(
-                            labelText: "Destination",
+                            labelText: "Destino",
                             hintText: selectedHospitalId ?? "Selecciona un hospital...", // Dynamically update the hint
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8),
@@ -185,6 +188,7 @@ class _MapPageState extends State<MapPage> {
                                         destinationLocation = initialLocation; // Reset destination
                                         polylines.clear(); // Remove the polyline
                                         selectedHospitalId = null; // Clear the selected hospital
+                                        selectedHospital = null; // Clear the selected hospital object
                                       });
                                     },
                                   )
@@ -267,12 +271,13 @@ class _MapPageState extends State<MapPage> {
 
                 if (selectedHospital != null) {
                   setState(() {
+                    this.selectedHospital = selectedHospital; // Update the selected hospital
+                    selectedHospitalId = selectedHospital.name; // Update the destination label
                     destinationLocation = LatLng(
                       selectedHospital.latitude,
                       selectedHospital.longitude,
                     );
-                    selectedHospitalId = selectedHospital.name; // Update the destination label
-                    getPolyLinePoints();
+                    getPolyLinePoints(); // Generate the polyline
                   });
                 }
               },
@@ -354,11 +359,21 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
-  // Filter markers based on the selected sector
+  // Filter markers based on the selected sector or selected hospital
   Set<Marker> getFilteredMarkers() {
-    if (selectedSectorFilter == null) {
-      return hospitalMarkers; // Show all markers if no filter is selected
+    if (selectedHospital != null) {
+      // Show only the selected hospital's marker
+      return {
+        selectedHospital!.createMarker(),
+      };
     }
+
+    if (selectedSectorFilter == null) {
+      // Show all markers if no filter is selected
+      return hospitalMarkers;
+    }
+
+    // Show markers based on the selected sector filter
     return hospitals
         .where((hospital) => hospital.sector == selectedSectorFilter)
         .map((hospital) => hospital.createMarker())
